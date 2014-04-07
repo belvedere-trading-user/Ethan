@@ -1,0 +1,3 @@
+= ethan
+
+Verified works with Redmine 2.2.4.
