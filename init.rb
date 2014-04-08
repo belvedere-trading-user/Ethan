@@ -1,6 +1,6 @@
 require 'redmine'
   
-Redmine::Plugin.register :ethan do
+Redmine::Plugin.register :Ethan do
   name 'Ethan Search plugin'
   author 'Belvedere Trading'
   description 'A more serious Searcher for Redmine'
