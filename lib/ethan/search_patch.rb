@@ -1,3 +1,5 @@
+require 'will_paginate/array'
+
 module Ethan
   module Patches
     module SearchPatch
@@ -73,7 +75,6 @@ module Ethan
             @results = []
             @results_by_type = Hash.new {|h,k| h[k] = 0}
     
-            limit = 10
             @scope.each do |s|
               model = s.singularize.camelcase.constantize
               if s.singularize == "issue"
@@ -82,26 +83,13 @@ module Ethan
               r, c = model.search(@tokens, projects_to_search,
                 :all_words => @all_words,
                 :titles_only => @titles_only,
-                :limit => (limit+1),
                 :offset => offset,
                 :before => params[:previous].nil?)
               @results += r
               @results_by_type[s] += c
             end
             @results = @results.sort {|a,b| b.event_datetime <=> a.event_datetime}
-            if params[:previous].nil?
-              @pagination_previous_date = @results[0].event_datetime if offset && @results[0]
-              if @results.size > limit
-                @pagination_next_date = @results[limit-1].event_datetime
-                @results = @results[0, limit]
-              end
-            else
-              @pagination_next_date = @results[-1].event_datetime if offset && @results[-1]
-              if @results.size > limit
-                @pagination_previous_date = @results[-(limit)].event_datetime
-                @results = @results[-(limit), limit]
-              end
-            end
+            @results = @results.paginate(:page => params[:page])
           else
             @question = ""
           end
