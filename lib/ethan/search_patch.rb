@@ -28,7 +28,11 @@ module Ethan
             when 'subprojects'
               @project ? (@project.self_and_descendants.active.all) : nil
             else
-              @project
+              if !params.has_key?(:submit)
+                @project ? (@project.self_and_descendants.active.all) : nil
+              else
+                @project
+              end
             end
 
           offset = nil
@@ -41,17 +45,27 @@ module Ethan
           end
 
           @object_types = Redmine::Search.available_search_types.dup
-          if projects_to_search.is_a? Project
-            # don't search projects
-            @object_types.delete('projects')
-            # only show what the user is allowed to view
-            @object_types = @object_types.select {|o| User.current.allowed_to?("view_#{o}".to_sym, projects_to_search)}
+          unless projects_to_search.nil?
+           if (projects_to_search.is_a? Project) || (projects_to_search.one?)
+             # don't search projects
+             @object_types.delete('projects')
+             # only show what the user is allowed to view
+             @object_types = @object_types.select {|o| User.current.allowed_to?("view_#{o}".to_sym, projects_to_search)}
+           end
           end
 
           if projects_to_search.nil?
             @trackers = Tracker.all
           else
-            @trackers = Array(projects_to_search).collect(&:trackers).flatten.uniq
+            @trackers = []
+            Array(projects_to_search).each do |project|
+              (@trackers | [project.trackers]) if project.respond_to?('trackers')
+              if project.respond_to?('trackers')
+                project.trackers.each do |tracker|
+                  @trackers.push(tracker) unless @trackers.include?(tracker)
+                end
+              end
+            end
           end
 
           @scope = @object_types.select {|t| params[t]}
